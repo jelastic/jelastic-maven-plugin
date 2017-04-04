@@ -1,0 +1,12 @@
+*.iml
+.idea
+atlassian-ide-plugin.xml
+.svn
+target
+*.class
+*.war
+*.log
+*-temp-*
+.clover
+.DS_Store
+target

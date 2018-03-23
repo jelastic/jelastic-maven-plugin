@@ -4,6 +4,51 @@ package com.jelastic;
  * User: Igor.Yova@gmail.com
  * Date: 6/8/11
  * Time: 10:30 AM
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
  */
 
 
@@ -50,14 +95,13 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Proxy;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -65,6 +109,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
+/**
+ * @threadSafe
+ */
 public abstract class JelasticMojo extends AbstractMojo {
     private final static String shema = "https";
     private int port = -1;
@@ -80,8 +127,20 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String urlGetArchives = "/GetArchives";
     private final static String urlDeleteArchive = "/DeleteArchive";
     private final static int SAME_FILES_LIMIT = 5;
+    private final static String COMMENT_PREFIX = "Uploaded by Jelastic Maven plugin";
     private static ObjectMapper mapper = new ObjectMapper();
     private static Properties properties = new Properties();
+
+    //Properties
+    private final static String JELASTIC_PREDEPLOY_HOOK_PROPERTY = "jelastic-predeploy-hook";
+    private final static String JELASTIC_POSTDEPLOY_HOOK_PROPERTY = "jelastic-postdeploy-hook";
+    private final static String NODE_GROUP_PROPERTY = "nodegroup";
+    private final static String ENVIRONMENT_PROPERTY = "environment";
+    private final static String CONTEXT_PROPERTY = "context";
+    private final static String JELASTIC_EMAIL_PROPERTY = "jelastic-email";
+    private final static String JELASTIC_PASSWORD_PROPERTY = "jelastic-password";
+    private final static String JELASTIC_HOSTER_PROPERTY = "jelastic-hoster";
+    private final static String JELASTIC_ACTION_KEY = "action-key";
 
     /**
      * Used to look up Artifacts in the remote repository.
@@ -182,6 +241,13 @@ public abstract class JelasticMojo extends AbstractMojo {
     private String environment;
 
     /**
+     * Node group name Properties.
+     *
+     * @parameter
+     */
+    private String nodeGroup;
+
+    /**
      * Location of the file.
      *
      * @parameter expression="${project.build.directory}" default-value="${project.build.directory}"
@@ -193,6 +259,8 @@ public abstract class JelasticMojo extends AbstractMojo {
         if ("war".equals(packaging)) {
             return true;
         } else if ("ear".equals(packaging)) {
+            return true;
+        } else if ("jar".equals(packaging)) {
             return true;
         }
         return false;
@@ -207,8 +275,8 @@ public abstract class JelasticMojo extends AbstractMojo {
     }
 
     public String getApiJelastic() {
-        if (System.getProperty("jelastic-hoster") != null && System.getProperty("jelastic-hoster").length() > 0) {
-            api_hoster = System.getProperty("jelastic-hoster");
+        if (System.getProperty(JELASTIC_HOSTER_PROPERTY) != null && System.getProperty(JELASTIC_HOSTER_PROPERTY).length() > 0) {
+            api_hoster = System.getProperty(JELASTIC_HOSTER_PROPERTY);
         }
         return api_hoster;
     }
@@ -243,8 +311,8 @@ public abstract class JelasticMojo extends AbstractMojo {
 
     public String getEmail() {
         if (isExternalParameterPassed()) {
-            if (properties.getProperty("jelastic-email") != null && properties.getProperty("jelastic-email").length() > 0) {
-                return properties.getProperty("jelastic-email");
+            if (properties.getProperty(JELASTIC_EMAIL_PROPERTY) != null && properties.getProperty(JELASTIC_EMAIL_PROPERTY).length() > 0) {
+                return properties.getProperty(JELASTIC_EMAIL_PROPERTY);
             } else {
                 return email;
             }
@@ -255,8 +323,8 @@ public abstract class JelasticMojo extends AbstractMojo {
 
     public String getPassword() {
         if (isExternalParameterPassed()) {
-            if (properties.getProperty("jelastic-password") != null && properties.getProperty("jelastic-password").length() > 0) {
-                return properties.getProperty("jelastic-password");
+            if (properties.getProperty(JELASTIC_PASSWORD_PROPERTY) != null && properties.getProperty(JELASTIC_PASSWORD_PROPERTY).length() > 0) {
+                return properties.getProperty(JELASTIC_PASSWORD_PROPERTY);
             } else {
                 return password;
             }
@@ -267,8 +335,8 @@ public abstract class JelasticMojo extends AbstractMojo {
 
     public String getContext() {
         if (isExternalParameterPassed()) {
-            if (properties.getProperty("context") != null && properties.getProperty("context").length() > 0) {
-                return properties.getProperty("context");
+            if (properties.getProperty(CONTEXT_PROPERTY) != null && properties.getProperty(CONTEXT_PROPERTY).length() > 0) {
+                return properties.getProperty(CONTEXT_PROPERTY);
             } else {
                 return context;
             }
@@ -279,14 +347,77 @@ public abstract class JelasticMojo extends AbstractMojo {
 
     public String getEnvironment() {
         if (isExternalParameterPassed()) {
-            if (properties.getProperty("environment") != null && properties.getProperty("environment").length() > 0) {
-                return properties.getProperty("environment");
+            if (properties.getProperty(ENVIRONMENT_PROPERTY) != null && properties.getProperty(ENVIRONMENT_PROPERTY).length() > 0) {
+                return properties.getProperty(ENVIRONMENT_PROPERTY);
             } else {
                 return environment;
             }
         } else {
             return environment;
         }
+    }
+
+    private String getNodeGroup() {
+        if (isExternalParameterPassed()) {
+            if (properties.getProperty(NODE_GROUP_PROPERTY) != null && properties.getProperty(NODE_GROUP_PROPERTY).length() > 0) {
+                return properties.getProperty(NODE_GROUP_PROPERTY);
+            } else {
+                return nodeGroup;
+            }
+        } else {
+            return nodeGroup;
+        }
+    }
+
+    private String getPreDeployHookFilePath() {
+        return System.getProperty(JELASTIC_PREDEPLOY_HOOK_PROPERTY);
+    }
+
+    private String getPostDeployHookFilePath() {
+        return System.getProperty(JELASTIC_POSTDEPLOY_HOOK_PROPERTY);
+    }
+
+    private String getPreDeployHookContent() {
+        String preDeployHookFilePath = getPreDeployHookFilePath();
+        String preDeployHookContent = null;
+
+        if (preDeployHookFilePath != null && preDeployHookFilePath.length() > 0) {
+            try {
+                preDeployHookContent = readFileContent(preDeployHookFilePath);
+            } catch(Exception ex) {
+                getLog().info("Can't read [preDeployHook] from [" + preDeployHookFilePath + "]:" + ex.getMessage());
+            }
+        }
+
+        return preDeployHookContent;
+    }
+
+    private String getPostDeployHookContent() {
+        String postDeployHookFilePath = getPostDeployHookFilePath();
+        String postDeployHookContent = null;
+
+        if (postDeployHookFilePath != null && postDeployHookFilePath.length() > 0) {
+            try {
+                postDeployHookContent = readFileContent(postDeployHookFilePath);
+            } catch(Exception ex) {
+                getLog().info("Can't read [postDeployHook] from [" + postDeployHookFilePath + "]:" + ex.getMessage());
+            }
+        }
+
+        return postDeployHookContent;
+    }
+
+    private String readFileContent(String filePath) throws IOException {
+        InputStream is = new FileInputStream(filePath);
+        BufferedReader buf = new BufferedReader(new InputStreamReader(is));
+        String line = buf.readLine();
+        StringBuilder sb = new StringBuilder();
+        while(line != null) {
+            sb.append(line).append("\n");
+            line = buf.readLine();
+        }
+
+        return sb.toString();
     }
 
     public boolean isExternalParameterPassed() {
@@ -308,6 +439,11 @@ public abstract class JelasticMojo extends AbstractMojo {
         String uploadOnly = System.getProperty("jelastic-upload-only");
         return uploadOnly != null && (uploadOnly.equalsIgnoreCase("1") || uploadOnly.equalsIgnoreCase("true"));
     }
+
+    private String getActionKey() {
+        return System.getProperty(JELASTIC_ACTION_KEY);
+    }
+
 
     public Authentication authentication() throws MojoExecutionException {
         Authentication authentication = new Authentication();
@@ -369,13 +505,14 @@ public abstract class JelasticMojo extends AbstractMojo {
                 qparams.add(new BasicNameValuePair("login", getEmail()));
                 qparams.add(new BasicNameValuePair("password", getPassword()));
 
-                URI uri = URIUtils.createURI(getShema(), getApiJelastic(), getPort(), getUrlAuthentication(), URLEncodedUtils.format(qparams, "UTF-8"), null);
+                URI uri = URIUtils.createURI(getShema(), getApiJelastic(), getPort(), getUrlAuthentication(), null, null);
                 getLog().debug(uri.toString());
 
-                HttpGet httpGet = new HttpGet(uri);
+                HttpPost httpPost = new HttpPost(uri);
+                httpPost.setEntity(new UrlEncodedFormEntity(qparams, "UTF-8"));
 
                 ResponseHandler<String> responseHandler = new BasicResponseHandler();
-                String responseBody = httpclient.execute(httpGet, responseHandler);
+                String responseBody = httpclient.execute(httpPost, responseHandler);
                 cookieStore = httpclient.getCookieStore();
 
                 List<Cookie> cookies = cookieStore.getCookies();
@@ -484,8 +621,27 @@ public abstract class JelasticMojo extends AbstractMojo {
         return upLoader;
     }
 
+    private String getArtifactComment() {
+        String comment = COMMENT_PREFIX;
+        String localComment = null;
+
+        String jelasticComment = System.getProperty("jelastic-comment");
+
+        if (StringUtils.isNotEmpty(jelasticComment)) {
+            localComment = jelasticComment;
+        } else if (project.getModel().getDescription() != null) {
+            localComment = project.getModel().getDescription();
+        }
+
+        if (StringUtils.isNotEmpty(localComment)) {
+            comment += ". " + localComment.replaceAll("\\n", "");
+        }
+
+        return comment;
+    }
+
     public CreateObject createObject(UpLoader upLoader, final Authentication authentication) {
-        final String comment = "Uploaded by Jelastic Maven plugin";
+        final String comment = getArtifactComment();
 
         Map<String, String> params = new HashMap<String, String>();
 
@@ -511,7 +667,7 @@ public abstract class JelasticMojo extends AbstractMojo {
                 List<Integer> ids = new ArrayList<Integer>();
 
                 for (Archive archive : archives.getResponse().getObjects()) {
-                    if (archive.getName().equals(artifactFile.getName()) && comment.equals(archive.getComment())) {
+                    if (archive.getName().equals(artifactFile.getName()) && StringUtils.isNotEmpty(archive.getComment()) && archive.getComment().startsWith(COMMENT_PREFIX)) {
                         ids.add(archive.getId());
                     }
                 }
@@ -656,6 +812,22 @@ public abstract class JelasticMojo extends AbstractMojo {
             qparams.add(new BasicNameValuePair("archiveName", upLoader.getName()));
             qparams.add(new BasicNameValuePair("newContext", getContext()));
             qparams.add(new BasicNameValuePair("domain", getEnvironment()));
+            qparams.add(new BasicNameValuePair("nodeGroup", getNodeGroup()));
+
+            String preDeployHookContent = getPreDeployHookContent();
+            if (preDeployHookContent != null) {
+                qparams.add(new BasicNameValuePair("preDeployHook", preDeployHookContent));
+            }
+
+            String postDeployHookContent = getPostDeployHookContent();
+            if (postDeployHookContent != null) {
+                qparams.add(new BasicNameValuePair("postDeployHook", postDeployHookContent));
+            }
+
+            String actionKey = getActionKey();
+            if (actionKey != null) {
+                qparams.add(new BasicNameValuePair("actionkey", actionKey));
+            }
 
             URI uri = URIUtils.createURI(getShema(), getApiJelastic(), getPort(), getUrlDeploy(), URLEncodedUtils.format(qparams, "UTF-8"), null);
             getLog().debug(uri.toString());

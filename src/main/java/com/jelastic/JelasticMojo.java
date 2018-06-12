@@ -102,9 +102,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
+import java.net.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -113,19 +111,26 @@ import java.util.*;
  * @threadSafe
  */
 public abstract class JelasticMojo extends AbstractMojo {
-    private final static String shema = "https";
+    private final static String WAR_TYPE = "war";
+    private final static String EAR_TYPE = "ear";
+    private final static String JAR_TYPE = "jar";
+
+    private final static String HTTP_PROTOCOL = "http";
+    private final static String HTTPS_PROTOCOL = "https";
+
+    private final static String SCHEMA = HTTPS_PROTOCOL;
     private int port = -1;
-    private final static String version = "1.0";
+    private final static String VERSION = "1.0";
     private long totalSize;
     private int numSt;
     private CookieStore cookieStore = null;
-    private final static String urlAuthentication = "/" + version + "/users/authentication/rest/signin";
-    private final static String urlUploader = "/" + version + "/storage/uploader/rest/upload";
-    private final static String urlCreateObject = "/deploy/createobject";
-    private final static String urlDeploy = "/deploy/DeployArchive";
-    private final static String urlLogOut = "/users/authentication/rest/signout";
-    private final static String urlGetArchives = "/GetArchives";
-    private final static String urlDeleteArchive = "/DeleteArchive";
+    private final static String URL_AUTHENTICATION = "/" + VERSION + "/users/authentication/rest/signin";
+    private final static String URL_UPLOADER = "/" + VERSION + "/storage/uploader/rest/upload";
+    private final static String URL_CREATE_OBJECT = "/deploy/createobject";
+    private final static String URL_DEPLOY = "/deploy/DeployArchive";
+    private final static String URL_LOG_OUT = "/users/authentication/rest/signout";
+    private final static String URL_GET_ARCHIVES = "/GetArchives";
+    private final static String URL_DELETE_ARCHIVE = "/DeleteArchive";
     private final static int SAME_FILES_LIMIT = 5;
     private final static String COMMENT_PREFIX = "Uploaded by Jelastic Maven plugin";
     private static ObjectMapper mapper = new ObjectMapper();
@@ -141,6 +146,15 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String JELASTIC_PASSWORD_PROPERTY = "jelastic-password";
     private final static String JELASTIC_HOSTER_PROPERTY = "jelastic-hoster";
     private final static String JELASTIC_ACTION_KEY = "action-key";
+    private final static String JELASTIC_DEPLOYMENT_ARTIFACT_NAME = "jelastic.deployment.artifactName";
+    private final static String JELASTIC_ARTIFACT_NAME = "jelastic-artifact";
+    private final static String JELASTIC_COMMENT_PROPERTY = "jelastic-comment";
+    private final static String JELASTIC_HEADERS_PROPERTY = "jelastic-headers";
+    private final static String JELASTIC_SESSION_PROPERTY = "jelastic-session";
+    private final static String JELASTIC_TOKEN_PROPERTY = "jelastic-apitoken";
+
+    //Env. vars
+    private final static String MAVEN_DEPLOY_ARTIFACT_ENV = "MAVEN_DEPLOY_ARTIFACT";
 
     /**
      * Used to look up Artifacts in the remote repository.
@@ -248,21 +262,36 @@ public abstract class JelasticMojo extends AbstractMojo {
     private String nodeGroup;
 
     /**
+     * Api token Properties.
+     *
+     * @parameter
+     */
+    private String apiToken;
+
+    /**
+     * Artifact for deploy.
+     *
+     * @parameter
+     */
+    private String artifact;
+
+    /**
      * Location of the file.
      *
      * @parameter expression="${project.build.directory}" default-value="${project.build.directory}"
      * @required
      */
-    public File outputDirectory;
+    private File outputDirectory;
 
-    protected boolean isWar() {
-        if ("war".equals(packaging)) {
+    boolean isWar() {
+        if (WAR_TYPE.equals(packaging)) {
             return true;
-        } else if ("ear".equals(packaging)) {
+        } else if (EAR_TYPE.equals(packaging)) {
             return true;
-        } else if ("jar".equals(packaging)) {
+        } else if (JAR_TYPE.equals(packaging)) {
             return true;
         }
+
         return false;
     }
 
@@ -270,102 +299,84 @@ public abstract class JelasticMojo extends AbstractMojo {
         return outputDirectory;
     }
 
-    public String getShema() {
-        return shema;
+    private String getShema() {
+        return SCHEMA;
     }
 
-    public String getApiJelastic() {
+    private String getApiJelastic() {
         if (System.getProperty(JELASTIC_HOSTER_PROPERTY) != null && System.getProperty(JELASTIC_HOSTER_PROPERTY).length() > 0) {
             api_hoster = System.getProperty(JELASTIC_HOSTER_PROPERTY);
         }
+
         return api_hoster;
     }
 
-    public int getPort() {
+    private int getPort() {
         return port;
     }
 
-    public CookieStore getCookieStore() {
+    private CookieStore getCookieStore() {
         return cookieStore;
     }
 
-    public String getUrlAuthentication() {
-        return urlAuthentication;
+    private String getUrlAuthentication() {
+        return URL_AUTHENTICATION;
     }
 
-    public String getUrlUploader() {
-        return urlUploader;
+    private String getUrlUploader() {
+        return URL_UPLOADER;
     }
 
-    public String getUrlCreateObject() {
-        return urlCreateObject;
+    private String getUrlCreateObject() {
+        return URL_CREATE_OBJECT;
     }
 
-    public String getUrlDeploy() {
-        return urlDeploy;
+    private String getUrlDeploy() {
+        return URL_DEPLOY;
     }
 
-    public String getUrlLogOut() {
-        return urlLogOut;
+    private String getUrlLogOut() {
+        return URL_LOG_OUT;
     }
 
-    public String getEmail() {
-        if (isExternalParameterPassed()) {
-            if (properties.getProperty(JELASTIC_EMAIL_PROPERTY) != null && properties.getProperty(JELASTIC_EMAIL_PROPERTY).length() > 0) {
-                return properties.getProperty(JELASTIC_EMAIL_PROPERTY);
-            } else {
-                return email;
-            }
-        } else {
-            return email;
-        }
+    private String getEmail() {
+        return getProperty(JELASTIC_EMAIL_PROPERTY, email);
     }
 
-    public String getPassword() {
-        if (isExternalParameterPassed()) {
-            if (properties.getProperty(JELASTIC_PASSWORD_PROPERTY) != null && properties.getProperty(JELASTIC_PASSWORD_PROPERTY).length() > 0) {
-                return properties.getProperty(JELASTIC_PASSWORD_PROPERTY);
-            } else {
-                return password;
-            }
-        } else {
-            return password;
-        }
+    private String getPassword() {
+        return getProperty(JELASTIC_PASSWORD_PROPERTY, password);
     }
 
-    public String getContext() {
-        if (isExternalParameterPassed()) {
-            if (properties.getProperty(CONTEXT_PROPERTY) != null && properties.getProperty(CONTEXT_PROPERTY).length() > 0) {
-                return properties.getProperty(CONTEXT_PROPERTY);
-            } else {
-                return context;
-            }
-        } else {
-            return context;
-        }
+    private String getContext() {
+        return getProperty(CONTEXT_PROPERTY, context);
     }
 
-    public String getEnvironment() {
-        if (isExternalParameterPassed()) {
-            if (properties.getProperty(ENVIRONMENT_PROPERTY) != null && properties.getProperty(ENVIRONMENT_PROPERTY).length() > 0) {
-                return properties.getProperty(ENVIRONMENT_PROPERTY);
-            } else {
-                return environment;
-            }
-        } else {
-            return environment;
-        }
+    private String getEnvironment() {
+        return getProperty(ENVIRONMENT_PROPERTY, environment);
     }
 
     private String getNodeGroup() {
+        return getProperty(NODE_GROUP_PROPERTY, nodeGroup);
+    }
+
+    private String getApiToken() {
+        String apiTokenFromProps = System.getProperty(JELASTIC_TOKEN_PROPERTY);
+        if (apiTokenFromProps != null && apiTokenFromProps.length() > 0) {
+            apiToken = apiTokenFromProps;
+        }
+
+        return apiToken;
+    }
+
+    private String getProperty(String name, String defaultValue) {
         if (isExternalParameterPassed()) {
-            if (properties.getProperty(NODE_GROUP_PROPERTY) != null && properties.getProperty(NODE_GROUP_PROPERTY).length() > 0) {
-                return properties.getProperty(NODE_GROUP_PROPERTY);
+            if (properties.getProperty(name) != null && properties.getProperty(name).length() > 0) {
+                return properties.getProperty(name);
             } else {
-                return nodeGroup;
+                return defaultValue;
             }
         } else {
-            return nodeGroup;
+            return defaultValue;
         }
     }
 
@@ -444,12 +455,66 @@ public abstract class JelasticMojo extends AbstractMojo {
         return System.getProperty(JELASTIC_ACTION_KEY);
     }
 
+    private String getCustomArtifactName() {
+        String artifactName = getCustomArtifactNameFromProps();
+        if (artifactName == null || artifactName.length() == 0) {
+            artifactName = artifact;
+            if (artifactName == null || artifactName.length() == 0) {
+                return getCustomArtifactNameFromEnvVar();
+            }
+        }
 
-    public Authentication authentication() throws MojoExecutionException {
+        return artifactName;
+    }
+
+    private String getCustomArtifactNameFromProps() {
+        return System.getProperty(JELASTIC_ARTIFACT_NAME);
+    }
+
+    private String getCustomArtifactNameFromEnvVar() {
+        //TODO: MSH: Переделать на использование другой проперти, добавит отдельную для имени проекта
+        String comment = System.getProperty(JELASTIC_COMMENT_PROPERTY);
+        getLog().debug("***** comment: " + comment);
+        if (comment == null || comment.length() == 0) {
+            return null;
+        }
+
+        //Get value for MAVEN_DEPLOY_ARTIFACT_project_name
+        String projectName = comment.replaceAll(" ", "_").replaceAll("-", "_");
+        String envVar = MAVEN_DEPLOY_ARTIFACT_ENV + "_" + projectName;
+        String value = System.getenv(envVar);
+        getLog().debug(envVar + "=" + value);
+
+        if (value == null || value.length() == 0) {
+            //Get value for MAVEN_DEPLOY_ARTIFACT
+            value = System.getenv(MAVEN_DEPLOY_ARTIFACT_ENV);
+            getLog().debug(MAVEN_DEPLOY_ARTIFACT_ENV + "=" + value);
+        }
+
+        return value;
+    }
+
+    /*private String getCustomArtifactNameFromPomProps() {
+        String propNames = "";
+        Enumeration<?> propEnum = project.getProperties().propertyNames();
+        while (propEnum.hasMoreElements()) {
+            propNames += ", " + propEnum.nextElement().toString();
+        }
+
+        getLog().info("***** prop names: " + propNames);
+
+        String artifactName = project.getProperties().getProperty(JELASTIC_DEPLOYMENT_ARTIFACT_NAME);
+        getLog().info("***** properties size: " + project.getProperties().size());
+        getLog().info("***** " + JELASTIC_DEPLOYMENT_ARTIFACT_NAME + ": " + artifactName);
+
+        return artifactName;
+    }*/
+
+    Authentication authentication() throws MojoExecutionException {
         Authentication authentication = new Authentication();
+        String jelasticHeaders = System.getProperty(JELASTIC_HEADERS_PROPERTY);
 
-        String jelasticHeaders = System.getProperty("jelastic-headers");
-        getLog().debug("jelastic-headers=" + jelasticHeaders);
+        getLog().debug(JELASTIC_HEADERS_PROPERTY + "=" + jelasticHeaders);
 
         if (jelasticHeaders != null && jelasticHeaders.length() > 0) {
             try {
@@ -460,33 +525,24 @@ public abstract class JelasticMojo extends AbstractMojo {
             }
         }
 
-        UsernamePasswordCredentials usernamePasswordCredentials = null;
-        if (System.getProperty("jelastic-session") != null && System.getProperty("jelastic-session").length() > 0) {
-            authentication.setSession(System.getProperty("jelastic-session"));
+        String apiToken = getApiToken();
+        if (System.getProperty(JELASTIC_SESSION_PROPERTY) != null && System.getProperty(JELASTIC_SESSION_PROPERTY).length() > 0) {
+            getLog().debug("auth by " + JELASTIC_SESSION_PROPERTY);
+            authentication.setSession(System.getProperty(JELASTIC_SESSION_PROPERTY));
+            authentication.setResult(0);
+        } else if (apiToken != null && apiToken.length() > 0) {
+            getLog().debug("auth by apitoken");
+            authentication.setSession(apiToken);
             authentication.setResult(0);
         } else {
-            List<Proxy> proxyList = mavenSession.getSettings().getProxies();
-            HttpHost http_proxy = null;
+            getLog().debug("auth by email/password");
 
-            for (Proxy proxy : proxyList) {
-                if (proxy.getProtocol().equalsIgnoreCase("http") || proxy.isActive()) {
-                    http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-
-                    if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                        usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                    }
-                } else if (proxy.getProtocol().equalsIgnoreCase("https") || proxy.isActive()) {
-                    http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-
-                    if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                        usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                    }
-                }
-            }
+            Proxy mavenProxy = getMavenProxy();
+            UsernamePasswordCredentials usernamePasswordCredentials = getProxyCredential(mavenProxy);
+            HttpHost http_proxy = createHttpProxyProxy(mavenProxy);
 
             try {
                 DefaultHttpClient httpclient = new DefaultHttpClient();
-
                 httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
                 httpclient.getParams().setParameter("http.protocol.single-cookie-header", Boolean.TRUE);
 
@@ -536,22 +592,10 @@ public abstract class JelasticMojo extends AbstractMojo {
 
     public UpLoader upload(Authentication authentication) throws MojoExecutionException {
         UpLoader upLoader = null;
-        List<Proxy> proxyList = mavenSession.getSettings().getProxies();
-        HttpHost http_proxy = null;
-        UsernamePasswordCredentials usernamePasswordCredentials = null;
-        for (Proxy proxy : proxyList) {
-            if (proxy.getProtocol().equalsIgnoreCase("http") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            } else if (proxy.getProtocol().equalsIgnoreCase("https") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            }
-        }
+        Proxy mavenProxy = getMavenProxy();
+        UsernamePasswordCredentials usernamePasswordCredentials = getProxyCredential(mavenProxy);
+        HttpHost http_proxy = createHttpProxyProxy(mavenProxy);
+
         try {
             DefaultHttpClient httpclient = new DefaultHttpClient();
             httpclient = wrapClient(httpclient);
@@ -561,32 +605,86 @@ public abstract class JelasticMojo extends AbstractMojo {
                     httpclient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT), usernamePasswordCredentials);
                 }
             }
+
             httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, http_proxy);
             httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
             httpclient.getParams().setParameter("http.protocol.single-cookie-header", Boolean.TRUE);
-
             httpclient.setCookieStore(getCookieStore());
 
             for (Cookie cookie : httpclient.getCookieStore().getCookies()) {
                 getLog().debug(cookie.getName() + " = " + cookie.getValue());
             }
 
-            if (!artifactFile.exists()) {
+            File[] files = outputDirectory.listFiles(new FileFilter() {
+                public boolean accept(File pathname) {
+                    return pathname.isFile() && pathname.getName().matches(".*\\.(" + WAR_TYPE + "|" + EAR_TYPE +"|" + JAR_TYPE + ")$");
+                }
+            });
+
+            if (files == null || files.length == 0) {
+                throw new MojoExecutionException("Output directory doesn't contain artifacts");
+            }
+
+            //The biggest is the first
+            List<File> fileList = new ArrayList<File>(Arrays.asList(files));
+            Collections.sort(fileList, new Comparator<File>() {
+                public int compare(File o1, File o2) {
+                    if (o1.length() > o2.length()) {
+                        return -1;
+                    }
+
+                    if (o1.length() < o2.length()) {
+                        return 1;
+                    }
+
+                    return 0;
+                }
+            });
+
+            String customArtifactName = getCustomArtifactName();
+            if (customArtifactName != null && customArtifactName.length() > 0) {
+                String artifactPath = outputDirectory + File.separator + customArtifactName;
+                getLog().debug("Custom artifact path: " + artifactPath);
+                artifactFile = new File(artifactPath);
+                if (!artifactFile.exists()) {
+                    artifactFile = fileList.get(0);
+                }
+            } else {
+                //ignore default artifact file (remove this for rollback 'The biggest is the first' algorithm)
+                artifactFile = null;
+            }
+
+            if (artifactFile == null || !artifactFile.exists()) {
+                artifactFile = fileList.get(0);
+            }
+
+            getLog().debug("Found artifacts:");
+
+            for (File file : fileList) {
+                getLog().debug("\t" + (artifactFile.getName().equalsIgnoreCase(file.getName()) ? "(*) " : "  * ") + file.getName() + " - " + file.length());
+            }
+
+            getLog().debug("Selected artifact: " + artifactFile.getAbsolutePath());
+
+            /*if (!artifactFile.exists()) {
                 String externalFileName = getWarNameFromWarPlugin();
                 if (externalFileName != null) {
-                    File extPlufinConfiguration = new File(outputDirectory + File.separator + getWarNameFromWarPlugin() + "." + packaging);
+                    String artifactPath = outputDirectory + File.separator + externalFileName + "." + packaging;
+                    File extPlufinConfiguration = new File(artifactPath);
                     if (!extPlufinConfiguration.exists()) {
                         throw new MojoExecutionException("First build artifact and try again. Artifact not found " + extPlufinConfiguration.getName());
                     }
+
                     getLog().info("Found another configuration artifact name is " + extPlufinConfiguration.getName());
-                    artifactFile = new File(outputDirectory + File.separator + getWarNameFromWarPlugin() + "." + packaging);
+
+                    artifactFile = new File(artifactPath);
                 } else {
                     throw new MojoExecutionException("First build artifact and try again. Artifact not found " + artifactFile.getName());
                 }
-            }
-
+            }*/
 
             getLog().info("File Uploading Progress :");
+
             CustomMultiPartEntity multipartEntity = new CustomMultiPartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, new CustomMultiPartEntity.ProgressListener() {
                 public void transferred(long num) {
                     if (((int) ((num / (float) totalSize) * 100)) != numSt) {
@@ -599,6 +697,7 @@ public abstract class JelasticMojo extends AbstractMojo {
             multipartEntity.addPart("fid", new StringBody("123456"));
             multipartEntity.addPart("session", new StringBody(authentication.getSession()));
             multipartEntity.addPart("file", new FileBody(artifactFile));
+
             totalSize = multipartEntity.getContentLength();
 
             URI uri = URIUtils.createURI(getShema(), getApiJelastic(), getPort(), getUrlUploader(), null, null);
@@ -611,6 +710,14 @@ public abstract class JelasticMojo extends AbstractMojo {
             String responseBody = httpclient.execute(httpPost, responseHandler);
             getLog().debug(responseBody);
             upLoader = mapper.readValue(responseBody, UpLoader.class);
+
+            if (!isEmpty(upLoader.getFile())) {
+                String fileUrl = upLoader.getFile();
+                fileUrl = fileUrl.replaceFirst(HTTP_PROTOCOL, HTTPS_PROTOCOL);
+                if (isAvailableByHttps(fileUrl)) {
+                    upLoader.setFile(fileUrl);
+                }
+            }
         } catch (URISyntaxException e) {
             getLog().error(e.getMessage(), e);
         } catch (ClientProtocolException e) {
@@ -618,14 +725,14 @@ public abstract class JelasticMojo extends AbstractMojo {
         } catch (IOException e) {
             getLog().error(e.getMessage(), e);
         }
+
         return upLoader;
     }
 
     private String getArtifactComment() {
         String comment = COMMENT_PREFIX;
         String localComment = null;
-
-        String jelasticComment = System.getProperty("jelastic-comment");
+        String jelasticComment = System.getProperty(JELASTIC_COMMENT_PROPERTY);
 
         if (StringUtils.isNotEmpty(jelasticComment)) {
             localComment = jelasticComment;
@@ -692,27 +799,9 @@ public abstract class JelasticMojo extends AbstractMojo {
     }
 
     public <T> T makeRequest(String url, Map<String, String> params, Class<T> clazz) {
-
-        List<Proxy> proxyList = mavenSession.getSettings().getProxies();
-        HttpHost http_proxy = null;
-
-        UsernamePasswordCredentials usernamePasswordCredentials = null;
-
-        for (Proxy proxy : proxyList) {
-            if (proxy.getProtocol().equalsIgnoreCase("http") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            } else if (proxy.getProtocol().equalsIgnoreCase("https") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            }
-        }
+        Proxy mavenProxy = getMavenProxy();
+        UsernamePasswordCredentials usernamePasswordCredentials = getProxyCredential(mavenProxy);
+        HttpHost http_proxy = createHttpProxyProxy(mavenProxy);
 
         try {
             final DefaultHttpClient httpclient = wrapClient(new DefaultHttpClient());
@@ -771,22 +860,10 @@ public abstract class JelasticMojo extends AbstractMojo {
 
     public Deploy deploy(Authentication authentication, UpLoader upLoader, CreateObject createObject) {
         Deploy deploy = null;
-        List<Proxy> proxyList = mavenSession.getSettings().getProxies();
-        HttpHost http_proxy = null;
-        UsernamePasswordCredentials usernamePasswordCredentials = null;
-        for (Proxy proxy : proxyList) {
-            if (proxy.getProtocol().equalsIgnoreCase("http") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            } else if (proxy.getProtocol().equalsIgnoreCase("https") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            }
-        }
+        Proxy mavenProxy = getMavenProxy();
+        UsernamePasswordCredentials usernamePasswordCredentials = getProxyCredential(mavenProxy);
+        HttpHost http_proxy = createHttpProxyProxy(mavenProxy);
+
         try {
             DefaultHttpClient httpclient = new DefaultHttpClient();
             httpclient = wrapClient(httpclient);
@@ -844,27 +921,15 @@ public abstract class JelasticMojo extends AbstractMojo {
         } catch (IOException e) {
             getLog().error(e.getMessage(), e);
         }
+
         return deploy;
     }
 
     public LogOut logOut(Authentication authentication) {
         LogOut logOut = null;
-        List<Proxy> proxyList = mavenSession.getSettings().getProxies();
-        HttpHost http_proxy = null;
-        UsernamePasswordCredentials usernamePasswordCredentials = null;
-        for (Proxy proxy : proxyList) {
-            if (proxy.getProtocol().equalsIgnoreCase("http") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            } else if (proxy.getProtocol().equalsIgnoreCase("https") || proxy.isActive()) {
-                http_proxy = new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
-                if (proxy.getUsername() != null || proxy.getPassword() != null) {
-                    usernamePasswordCredentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
-                }
-            }
-        }
+        Proxy mavenProxy = getMavenProxy();
+        UsernamePasswordCredentials usernamePasswordCredentials = getProxyCredential(mavenProxy);
+        HttpHost http_proxy = createHttpProxyProxy(mavenProxy);
 
         try {
             DefaultHttpClient httpclient = new DefaultHttpClient();
@@ -960,10 +1025,57 @@ public abstract class JelasticMojo extends AbstractMojo {
     }
 
     public static String getUrlGetArchives() {
-        return urlGetArchives;
+        return URL_GET_ARCHIVES;
     }
 
     public static String getUrlDeleteArchive() {
-        return urlDeleteArchive;
+        return URL_DELETE_ARCHIVE;
+    }
+
+    private Proxy getMavenProxy() {
+        List<Proxy> proxyList = mavenSession.getSettings().getProxies();
+        for (Proxy proxy : proxyList) {
+            if (proxy.getProtocol().equalsIgnoreCase("http") || proxy.isActive()) {
+                return proxy;
+            } else if (proxy.getProtocol().equalsIgnoreCase("https") || proxy.isActive()) {
+                return proxy;
+            }
+        }
+
+        return null;
+    }
+
+    private HttpHost createHttpProxyProxy(Proxy proxy) {
+        if (proxy == null) {
+            return null;
+        }
+
+        return new HttpHost(proxy.getHost(), proxy.getPort(), proxy.getProtocol());
+    }
+
+    private UsernamePasswordCredentials getProxyCredential(Proxy proxy) {
+        UsernamePasswordCredentials credentials = null;
+        if (proxy != null) {
+            if (proxy.getUsername() != null || proxy.getPassword() != null) {
+                credentials = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
+            }
+        }
+
+        return credentials;
+    }
+
+    private boolean isAvailableByHttps(String fileUrl) {
+        try {
+            HttpURLConnection connection = (HttpURLConnection) new URL(fileUrl).openConnection();
+            connection.setConnectTimeout(5000);
+            return connection.getResponseCode() == 200;
+        } catch (IOException e) {
+        }
+
+        return false;
+    }
+
+    private boolean isEmpty(String str) {
+        return str == null || str.length() == 0;
     }
 }

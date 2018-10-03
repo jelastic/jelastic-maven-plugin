@@ -684,15 +684,18 @@ public abstract class JelasticMojo extends AbstractMojo {
             }*/
 
             getLog().info("File Uploading Progress :");
-
-            CustomMultiPartEntity multipartEntity = new CustomMultiPartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, new CustomMultiPartEntity.ProgressListener() {
-                public void transferred(long num) {
-                    if (((int) ((num / (float) totalSize) * 100)) != numSt) {
-                        getLog().info("[" + (int) ((num / (float) totalSize) * 100) + "%]");
-                        numSt = ((int) ((num / (float) totalSize) * 100));
+            
+            boolean batchMode = Boolean.getBoolean(System.getProperty("batch.mode", "false"));
+            if (!batchMode) {
+                CustomMultiPartEntity multipartEntity = new CustomMultiPartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, new CustomMultiPartEntity.ProgressListener() {
+                    public void transferred(long num) {
+                        if (((int) ((num / (float) totalSize) * 100)) != numSt) {
+                            getLog().info("[" + (int) ((num / (float) totalSize) * 100) + "%]");
+                            numSt = ((int) ((num / (float) totalSize) * 100));
+                        }
                     }
-                }
-            });
+                });
+            }
 
             multipartEntity.addPart("fid", new StringBody("123456"));
             multipartEntity.addPart("session", new StringBody(authentication.getSession()));

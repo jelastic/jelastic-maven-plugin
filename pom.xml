@@ -4,7 +4,7 @@
 
     <groupId>com.jelastic</groupId>
     <artifactId>jelastic-maven-plugin</artifactId>
-    <version>1.9</version>
+    <version>1.9.1</version>
     <packaging>maven-plugin</packaging>
     <name>jelastic-maven-plugin</name>
     <url>https://github.com/jelastic/jelastic-maven-plugin</url>
@@ -56,12 +56,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
-            <version>4.1.1</version>
+            <version>4.3.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.1.1</version>
+            <version>4.4</version>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>

@@ -152,6 +152,7 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String JELASTIC_TOKEN_PROPERTY = "jelastic-apitoken";
     //Env. vars
     private final static String MAVEN_DEPLOY_ARTIFACT_ENV = "MAVEN_DEPLOY_ARTIFACT";
+    public static final String BATCH_MODE = "batch.mode";
     private static ObjectMapper mapper = new ObjectMapper();
     private static Properties properties = new Properties();
     /**
@@ -721,7 +722,7 @@ public abstract class JelasticMojo extends AbstractMojo {
 
             getLog().info("File Uploading Progress :");
 
-            final boolean batchMode = Boolean.getBoolean(System.getProperty("batch.mode", "false"));
+            final boolean batchMode = Boolean.getBoolean(System.getProperty(BATCH_MODE, "false"));
             CustomMultiPartEntity multipartEntity = new CustomMultiPartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, new CustomMultiPartEntity.ProgressListener() {
                 public void transferred(long num) {
                     if (((int) ((num / (float) totalSize) * 100)) != numSt) {

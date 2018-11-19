@@ -49,6 +49,11 @@ package com.jelastic;
  * http://api.hivext.com/1.0/storage/uploader/rest/upload
  * http://app.hivext.com/1.0/data/base/rest/createobject
  * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
  */
 
 
@@ -119,11 +124,7 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String HTTPS_PROTOCOL = "https";
 
     private final static String SCHEMA = HTTPS_PROTOCOL;
-    private int port = -1;
     private final static String VERSION = "1.0";
-    private long totalSize;
-    private int numSt;
-    private CookieStore cookieStore = null;
     private final static String URL_AUTHENTICATION = "/" + VERSION + "/users/authentication/rest/signin";
     private final static String URL_UPLOADER = "/" + VERSION + "/storage/uploader/rest/upload";
     private final static String URL_CREATE_OBJECT = "/deploy/createobject";
@@ -133,9 +134,6 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String URL_DELETE_ARCHIVE = "/DeleteArchive";
     private final static int SAME_FILES_LIMIT = 5;
     private final static String COMMENT_PREFIX = "Uploaded by Jelastic Maven plugin";
-    private static ObjectMapper mapper = new ObjectMapper();
-    private static Properties properties = new Properties();
-
     //Properties
     private final static String JELASTIC_PREDEPLOY_HOOK_PROPERTY = "jelastic-predeploy-hook";
     private final static String JELASTIC_POSTDEPLOY_HOOK_PROPERTY = "jelastic-postdeploy-hook";
@@ -152,10 +150,10 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String JELASTIC_HEADERS_PROPERTY = "jelastic-headers";
     private final static String JELASTIC_SESSION_PROPERTY = "jelastic-session";
     private final static String JELASTIC_TOKEN_PROPERTY = "jelastic-apitoken";
-
     //Env. vars
     private final static String MAVEN_DEPLOY_ARTIFACT_ENV = "MAVEN_DEPLOY_ARTIFACT";
-
+    private static ObjectMapper mapper = new ObjectMapper();
+    private static Properties properties = new Properties();
     /**
      * Used to look up Artifacts in the remote repository.
      *
@@ -164,7 +162,10 @@ public abstract class JelasticMojo extends AbstractMojo {
      * @readonly
      */
     protected ArtifactResolver artifactResolver;
-
+    private int port = -1;
+    private long totalSize;
+    private int numSt;
+    private CookieStore cookieStore = null;
     /**
      * The package output file.
      *
@@ -283,6 +284,41 @@ public abstract class JelasticMojo extends AbstractMojo {
      */
     private File outputDirectory;
 
+    public static DefaultHttpClient wrapClient(DefaultHttpClient base) {
+        try {
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            X509TrustManager tm = new X509TrustManager() {
+                public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+                }
+
+                public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+                }
+
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+            };
+            ctx.init(null, new TrustManager[]{tm}, null);
+            SSLSocketFactory ssf = new SSLSocketFactory(ctx);
+            ssf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            ClientConnectionManager ccm = base.getConnectionManager();
+            SchemeRegistry sr = ccm.getSchemeRegistry();
+            sr.register(new Scheme("https", ssf, 443));
+            return new DefaultHttpClient(ccm, base.getParams());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String getUrlGetArchives() {
+        return URL_GET_ARCHIVES;
+    }
+
+    public static String getUrlDeleteArchive() {
+        return URL_DELETE_ARCHIVE;
+    }
+
     boolean isWar() {
         if (WAR_TYPE.equals(packaging)) {
             return true;
@@ -395,7 +431,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         if (preDeployHookFilePath != null && preDeployHookFilePath.length() > 0) {
             try {
                 preDeployHookContent = readFileContent(preDeployHookFilePath);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 getLog().info("Can't read [preDeployHook] from [" + preDeployHookFilePath + "]:" + ex.getMessage());
             }
         }
@@ -410,7 +446,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         if (postDeployHookFilePath != null && postDeployHookFilePath.length() > 0) {
             try {
                 postDeployHookContent = readFileContent(postDeployHookFilePath);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 getLog().info("Can't read [postDeployHook] from [" + postDeployHookFilePath + "]:" + ex.getMessage());
             }
         }
@@ -423,7 +459,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         BufferedReader buf = new BufferedReader(new InputStreamReader(is));
         String line = buf.readLine();
         StringBuilder sb = new StringBuilder();
-        while(line != null) {
+        while (line != null) {
             sb.append(line).append("\n");
             line = buf.readLine();
         }
@@ -454,6 +490,22 @@ public abstract class JelasticMojo extends AbstractMojo {
     private String getActionKey() {
         return System.getProperty(JELASTIC_ACTION_KEY);
     }
+
+    /*private String getCustomArtifactNameFromPomProps() {
+        String propNames = "";
+        Enumeration<?> propEnum = project.getProperties().propertyNames();
+        while (propEnum.hasMoreElements()) {
+            propNames += ", " + propEnum.nextElement().toString();
+        }
+
+        getLog().info("***** prop names: " + propNames);
+
+        String artifactName = project.getProperties().getProperty(JELASTIC_DEPLOYMENT_ARTIFACT_NAME);
+        getLog().info("***** properties size: " + project.getProperties().size());
+        getLog().info("***** " + JELASTIC_DEPLOYMENT_ARTIFACT_NAME + ": " + artifactName);
+
+        return artifactName;
+    }*/
 
     private String getCustomArtifactName() {
         String artifactName = getCustomArtifactNameFromProps();
@@ -493,22 +545,6 @@ public abstract class JelasticMojo extends AbstractMojo {
 
         return value;
     }
-
-    /*private String getCustomArtifactNameFromPomProps() {
-        String propNames = "";
-        Enumeration<?> propEnum = project.getProperties().propertyNames();
-        while (propEnum.hasMoreElements()) {
-            propNames += ", " + propEnum.nextElement().toString();
-        }
-
-        getLog().info("***** prop names: " + propNames);
-
-        String artifactName = project.getProperties().getProperty(JELASTIC_DEPLOYMENT_ARTIFACT_NAME);
-        getLog().info("***** properties size: " + project.getProperties().size());
-        getLog().info("***** " + JELASTIC_DEPLOYMENT_ARTIFACT_NAME + ": " + artifactName);
-
-        return artifactName;
-    }*/
 
     Authentication authentication() throws MojoExecutionException {
         Authentication authentication = new Authentication();
@@ -617,7 +653,7 @@ public abstract class JelasticMojo extends AbstractMojo {
 
             File[] files = outputDirectory.listFiles(new FileFilter() {
                 public boolean accept(File pathname) {
-                    return pathname.isFile() && pathname.getName().matches(".*\\.(" + WAR_TYPE + "|" + EAR_TYPE +"|" + JAR_TYPE + ")$");
+                    return pathname.isFile() && pathname.getName().matches(".*\\.(" + WAR_TYPE + "|" + EAR_TYPE + "|" + JAR_TYPE + ")$");
                 }
             });
 
@@ -684,18 +720,18 @@ public abstract class JelasticMojo extends AbstractMojo {
             }*/
 
             getLog().info("File Uploading Progress :");
-            
-            boolean batchMode = Boolean.getBoolean(System.getProperty("batch.mode", "false"));
-            if (!batchMode) {
-                CustomMultiPartEntity multipartEntity = new CustomMultiPartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, new CustomMultiPartEntity.ProgressListener() {
-                    public void transferred(long num) {
-                        if (((int) ((num / (float) totalSize) * 100)) != numSt) {
+
+            final boolean batchMode = Boolean.getBoolean(System.getProperty("batch.mode", "false"));
+            CustomMultiPartEntity multipartEntity = new CustomMultiPartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, new CustomMultiPartEntity.ProgressListener() {
+                public void transferred(long num) {
+                    if (((int) ((num / (float) totalSize) * 100)) != numSt) {
+                        if (!batchMode) {
                             getLog().info("[" + (int) ((num / (float) totalSize) * 100) + "%]");
-                            numSt = ((int) ((num / (float) totalSize) * 100));
                         }
+                        numSt = ((int) ((num / (float) totalSize) * 100));
                     }
-                });
-            }
+                }
+            });
 
             multipartEntity.addPart("fid", new StringBody("123456"));
             multipartEntity.addPart("session", new StringBody(authentication.getSession()));
@@ -983,33 +1019,6 @@ public abstract class JelasticMojo extends AbstractMojo {
         }
     }
 
-    public static DefaultHttpClient wrapClient(DefaultHttpClient base) {
-        try {
-            SSLContext ctx = SSLContext.getInstance("TLS");
-            X509TrustManager tm = new X509TrustManager() {
-                public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
-                }
-
-                public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
-                }
-
-                public X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-            };
-            ctx.init(null, new TrustManager[]{tm}, null);
-            SSLSocketFactory ssf = new SSLSocketFactory(ctx);
-            ssf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-            ClientConnectionManager ccm = base.getConnectionManager();
-            SchemeRegistry sr = ccm.getSchemeRegistry();
-            sr.register(new Scheme("https", ssf, 443));
-            return new DefaultHttpClient(ccm, base.getParams());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
     public String getWarNameFromWarPlugin() {
         MavenProject mavenProject = ((MavenProject) getPluginContext().get("project"));
         List<Plugin> plugins = mavenProject.getOriginalModel().getBuild().getPlugins();
@@ -1025,14 +1034,6 @@ public abstract class JelasticMojo extends AbstractMojo {
             }
         }
         return null;
-    }
-
-    public static String getUrlGetArchives() {
-        return URL_GET_ARCHIVES;
-    }
-
-    public static String getUrlDeleteArchive() {
-        return URL_DELETE_ARCHIVE;
     }
 
     private Proxy getMavenProxy() {

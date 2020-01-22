@@ -1,6 +1,10 @@
 package com.jelastic;
 
-import com.jelastic.model.*;
+import com.jelastic.api.environment.response.NodeSSHResponses;
+import com.jelastic.model.Authentication;
+import com.jelastic.model.CreateObject;
+import com.jelastic.model.LogOut;
+import com.jelastic.model.UpLoader;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -41,11 +45,11 @@ public class DeployMojo extends JelasticMojo {
                     getLog().info("------------------------------------------------------------------------");
 
                     if (isUploadOnly()) return;
-                    Deploy deploy = deploy(authentication, upLoader, createObject);
-                    if (deploy.getResponse().getResult() == 0) {
+                    NodeSSHResponses deploy = deploy(authentication, upLoader);
+                    if (deploy.getResult() == 0) {
                         getLog().info("      Deploy file : SUCCESS");
                         getLog().info("       Deploy log :");
-                        getLog().info(deploy.getResponse().getResponses()[0].getOut());
+                        getLog().info(deploy.getRaw());
 
                         if (System.getProperty("jelastic-session") == null) {
                             LogOut logOut = logOut(authentication);
@@ -59,9 +63,9 @@ public class DeployMojo extends JelasticMojo {
                         }
                     } else {
                         getLog().error("          Deploy : FAILED");
-                        getLog().error("           Error : " + deploy.getResponse().getError());
+                        getLog().error("           Error : " + deploy.getError());
 
-                        throw new MojoExecutionException(deploy.getResponse().getError());
+                        throw new MojoExecutionException(deploy.getError());
                     }
                 } else {
                     if (createObject.getResult() != 0) {

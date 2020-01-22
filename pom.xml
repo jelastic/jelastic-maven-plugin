@@ -4,7 +4,7 @@
 
     <groupId>com.jelastic</groupId>
     <artifactId>jelastic-maven-plugin</artifactId>
-    <version>1.9.3</version>
+    <version>1.9.4-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
     <name>jelastic-maven-plugin</name>
     <url>https://github.com/jelastic/jelastic-maven-plugin</url>
@@ -15,12 +15,18 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.jelastic</groupId>
+            <artifactId>jelastic-public-j2se</artifactId>
+            <version>5.7-8</version>
+        </dependency>
+
         <dependency>
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.8.1</version>
         </dependency>
-
 
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -106,20 +112,6 @@
             </extension>
         </extensions>
         <plugins>
-            <!--<plugin>-->
-            <!--<groupId>org.apache.maven.plugins</groupId>-->
-            <!--<artifactId>maven-gpg-plugin</artifactId>-->
-            <!--<version>1.4</version>-->
-            <!--<executions>-->
-            <!--<execution>-->
-            <!--<id>gpg-local</id>-->
-            <!--<phase>verify</phase>-->
-            <!--<goals>-->
-            <!--<goal>sign</goal>-->
-            <!--</goals>-->
-            <!--</execution>-->
-            <!--</executions>-->
-            <!--</plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
@@ -149,11 +141,6 @@
                 <configuration>
                     <archive>
                         <index>true</index>
-                        <!--
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                        </manifest>
-                        -->
                         <manifestEntries>
                             <url>${project.url}</url>
                         </manifestEntries>
@@ -193,6 +180,23 @@
                     </links>
                     <version>true</version>
                     <show>public</show>
+                    <tags>
+                        <tag>
+                            <name>goal</name>
+                            <placement>a</placement>
+                            <head>Goal:</head>
+                        </tag>
+                        <tag>
+                            <name>phase</name>
+                            <placement>a</placement>
+                            <head>Phase:</head>
+                        </tag>
+                        <tag>
+                            <name>threadSafe</name>
+                            <placement>a</placement>
+                            <head>Thread Safe:</head>
+                        </tag>
+                    </tags>
                 </configuration>
             </plugin>
             <plugin>
@@ -205,8 +209,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>

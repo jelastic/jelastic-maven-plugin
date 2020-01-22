@@ -49,6 +49,86 @@ package com.jelastic;
  * http://api.hivext.com/1.0/storage/uploader/rest/upload
  * http://app.hivext.com/1.0/data/base/rest/createobject
  * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
+ * <p>
+ * http://app.hivext.com/1.0/users/authentication/rest/signin
+ * http://api.hivext.com/1.0/storage/uploader/rest/upload
+ * http://app.hivext.com/1.0/data/base/rest/createobject
+ * http://live.jelastic.com/deploy/DeployArchive
  */
 
 
@@ -59,7 +139,14 @@ package com.jelastic;
  *        http://live.jelastic.com/deploy/DeployArchive
  */
 
-import com.jelastic.model.*;
+import com.jelastic.api.environment.Control;
+import com.jelastic.api.environment.response.NodeSSHResponses;
+import com.jelastic.model.Archive;
+import com.jelastic.model.Archives;
+import com.jelastic.model.Authentication;
+import com.jelastic.model.CreateObject;
+import com.jelastic.model.LogOut;
+import com.jelastic.model.UpLoader;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
@@ -101,11 +188,28 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @threadSafe
@@ -115,43 +219,43 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String EAR_TYPE = "ear";
     private final static String JAR_TYPE = "jar";
 
-    private final static String HTTP_PROTOCOL = "http";
+    private final static String HTTP_PROTOCOL  = "http";
     private final static String HTTPS_PROTOCOL = "https";
 
-    private final static String SCHEMA = HTTPS_PROTOCOL;
-    private int port = -1;
-    private final static String VERSION = "1.0";
-    private long totalSize;
-    private int numSt;
-    private CookieStore cookieStore = null;
-    private final static String URL_AUTHENTICATION = "/" + VERSION + "/users/authentication/rest/signin";
-    private final static String URL_UPLOADER = "/" + VERSION + "/storage/uploader/rest/upload";
-    private final static String URL_CREATE_OBJECT = "/deploy/createobject";
-    private final static String URL_DEPLOY = "/deploy/DeployArchive";
-    private final static String URL_LOG_OUT = "/users/authentication/rest/signout";
-    private final static String URL_GET_ARCHIVES = "/GetArchives";
-    private final static String URL_DELETE_ARCHIVE = "/DeleteArchive";
-    private final static int SAME_FILES_LIMIT = 5;
-    private final static String COMMENT_PREFIX = "Uploaded by Jelastic Maven plugin";
-    private static ObjectMapper mapper = new ObjectMapper();
-    private static Properties properties = new Properties();
+    private final static String       SCHEMA             = HTTPS_PROTOCOL;
+    private              int          port               = -1;
+    private final static String       VERSION            = "1.0";
+    private              long         totalSize;
+    private              int          numSt;
+    private              CookieStore  cookieStore        = null;
+    private final static String       URL_AUTHENTICATION = "/" + VERSION + "/users/authentication/rest/signin";
+    private final static String       URL_UPLOADER       = "/" + VERSION + "/storage/uploader/rest/upload";
+    private final static String       URL_CREATE_OBJECT  = "/deploy/createobject";
+    private final static String       URL_LOG_OUT        = "/users/authentication/rest/signout";
+    private final static String       URL_GET_ARCHIVES   = "/GetArchives";
+    private final static String       URL_DELETE_ARCHIVE = "/DeleteArchive";
+    private final static int          SAME_FILES_LIMIT   = 5;
+    private final static String       COMMENT_PREFIX     = "Uploaded by Jelastic Maven plugin";
+    private static       ObjectMapper mapper             = new ObjectMapper();
+    private static       Properties   properties         = new Properties();
 
     //Properties
-    private final static String JELASTIC_PREDEPLOY_HOOK_PROPERTY = "jelastic-predeploy-hook";
+    private final static String JELASTIC_PREDEPLOY_HOOK_PROPERTY  = "jelastic-predeploy-hook";
     private final static String JELASTIC_POSTDEPLOY_HOOK_PROPERTY = "jelastic-postdeploy-hook";
-    private final static String NODE_GROUP_PROPERTY = "nodegroup";
-    private final static String ENVIRONMENT_PROPERTY = "environment";
-    private final static String CONTEXT_PROPERTY = "context";
-    private final static String JELASTIC_EMAIL_PROPERTY = "jelastic-email";
-    private final static String JELASTIC_PASSWORD_PROPERTY = "jelastic-password";
-    private final static String JELASTIC_HOSTER_PROPERTY = "jelastic-hoster";
-    private final static String JELASTIC_ACTION_KEY = "action-key";
+    private final static String NODE_GROUP_PROPERTY               = "nodegroup";
+    private final static String DELAY_PROPERTY                    = "deplay";
+    private final static String ENVIRONMENT_PROPERTY              = "environment";
+    private final static String CONTEXT_PROPERTY                  = "context";
+    private final static String JELASTIC_EMAIL_PROPERTY           = "jelastic-email";
+    private final static String JELASTIC_PASSWORD_PROPERTY        = "jelastic-password";
+    private final static String JELASTIC_HOSTER_PROPERTY          = "jelastic-hoster";
+    private final static String JELASTIC_ACTION_KEY               = "action-key";
     private final static String JELASTIC_DEPLOYMENT_ARTIFACT_NAME = "jelastic.deployment.artifactName";
-    private final static String JELASTIC_ARTIFACT_NAME = "jelastic-artifact";
-    private final static String JELASTIC_COMMENT_PROPERTY = "jelastic-comment";
-    private final static String JELASTIC_HEADERS_PROPERTY = "jelastic-headers";
-    private final static String JELASTIC_SESSION_PROPERTY = "jelastic-session";
-    private final static String JELASTIC_TOKEN_PROPERTY = "jelastic-apitoken";
+    private final static String JELASTIC_ARTIFACT_NAME            = "jelastic-artifact";
+    private final static String JELASTIC_COMMENT_PROPERTY         = "jelastic-comment";
+    private final static String JELASTIC_HEADERS_PROPERTY         = "jelastic-headers";
+    private final static String JELASTIC_SESSION_PROPERTY         = "jelastic-session";
+    private final static String JELASTIC_TOKEN_PROPERTY           = "jelastic-apitoken";
 
     //Env. vars
     private final static String MAVEN_DEPLOY_ARTIFACT_ENV = "MAVEN_DEPLOY_ARTIFACT";
@@ -262,6 +366,13 @@ public abstract class JelasticMojo extends AbstractMojo {
     private String nodeGroup;
 
     /**
+     * Delay of sequential deploy
+     *
+     * @parameter
+     */
+    private String delay;
+
+    /**
      * Api token Properties.
      *
      * @parameter
@@ -331,10 +442,6 @@ public abstract class JelasticMojo extends AbstractMojo {
         return URL_CREATE_OBJECT;
     }
 
-    private String getUrlDeploy() {
-        return URL_DEPLOY;
-    }
-
     private String getUrlLogOut() {
         return URL_LOG_OUT;
     }
@@ -357,6 +464,14 @@ public abstract class JelasticMojo extends AbstractMojo {
 
     private String getNodeGroup() {
         return getProperty(NODE_GROUP_PROPERTY, nodeGroup);
+    }
+
+    public Integer getDelay() {
+        String delayString = getProperty(DELAY_PROPERTY, this.delay);
+        if (delayString == null) {
+            return null;
+        }
+        return Integer.valueOf(delayString);
     }
 
     private String getApiToken() {
@@ -395,7 +510,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         if (preDeployHookFilePath != null && preDeployHookFilePath.length() > 0) {
             try {
                 preDeployHookContent = readFileContent(preDeployHookFilePath);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 getLog().info("Can't read [preDeployHook] from [" + preDeployHookFilePath + "]:" + ex.getMessage());
             }
         }
@@ -410,7 +525,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         if (postDeployHookFilePath != null && postDeployHookFilePath.length() > 0) {
             try {
                 postDeployHookContent = readFileContent(postDeployHookFilePath);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 getLog().info("Can't read [postDeployHook] from [" + postDeployHookFilePath + "]:" + ex.getMessage());
             }
         }
@@ -423,7 +538,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         BufferedReader buf = new BufferedReader(new InputStreamReader(is));
         String line = buf.readLine();
         StringBuilder sb = new StringBuilder();
-        while(line != null) {
+        while (line != null) {
             sb.append(line).append("\n");
             line = buf.readLine();
         }
@@ -617,7 +732,7 @@ public abstract class JelasticMojo extends AbstractMojo {
 
             File[] files = outputDirectory.listFiles(new FileFilter() {
                 public boolean accept(File pathname) {
-                    return pathname.isFile() && pathname.getName().matches(".*\\.(" + WAR_TYPE + "|" + EAR_TYPE +"|" + JAR_TYPE + ")$");
+                    return pathname.isFile() && pathname.getName().matches(".*\\.(" + WAR_TYPE + "|" + EAR_TYPE + "|" + JAR_TYPE + ")$");
                 }
             });
 
@@ -858,71 +973,32 @@ public abstract class JelasticMojo extends AbstractMojo {
         return null;
     }
 
-    public Deploy deploy(Authentication authentication, UpLoader upLoader, CreateObject createObject) {
-        Deploy deploy = null;
-        Proxy mavenProxy = getMavenProxy();
-        UsernamePasswordCredentials usernamePasswordCredentials = getProxyCredential(mavenProxy);
-        HttpHost http_proxy = createHttpProxyProxy(mavenProxy);
+    public NodeSSHResponses deploy(Authentication authentication, UpLoader upLoader) {
+        String url = getApiJelastic();
+        Control control = new Control(null, authentication.getSession(), "http://" + url + "/1.0/" + Control.SERVICE_PATH);
+        Map<Object, Object> params = new HashMap<>();
+        params.put("envName", getEnvironment());
+        params.put("fileUrl", upLoader.getFile());
+        params.put("fileName", upLoader.getName());
+        params.put("context", getContext());
+        params.put("nodeGroup", getNodeGroup());
 
-        try {
-            DefaultHttpClient httpclient = new DefaultHttpClient();
-            httpclient = wrapClient(httpclient);
-            if (http_proxy != null) {
-                httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, http_proxy);
-                if (usernamePasswordCredentials != null) {
-                    httpclient.getCredentialsProvider().setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT), usernamePasswordCredentials);
-                }
-            }
-
-            httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
-            httpclient.getParams().setParameter("http.protocol.single-cookie-header", Boolean.TRUE);
-            httpclient.setCookieStore(getCookieStore());
-
-            for (Cookie cookie : httpclient.getCookieStore().getCookies()) {
-                getLog().debug(cookie.getName() + " = " + cookie.getValue());
-            }
-
-            List<NameValuePair> qparams = new ArrayList<NameValuePair>();
-            qparams.add(new BasicNameValuePair("charset", "UTF-8"));
-            qparams.add(new BasicNameValuePair("session", authentication.getSession()));
-            qparams.add(new BasicNameValuePair("archiveUri", upLoader.getFile()));
-            qparams.add(new BasicNameValuePair("archiveName", upLoader.getName()));
-            qparams.add(new BasicNameValuePair("newContext", getContext()));
-            qparams.add(new BasicNameValuePair("domain", getEnvironment()));
-            qparams.add(new BasicNameValuePair("nodeGroup", getNodeGroup()));
-
-            String preDeployHookContent = getPreDeployHookContent();
-            if (preDeployHookContent != null) {
-                qparams.add(new BasicNameValuePair("preDeployHook", preDeployHookContent));
-            }
-
-            String postDeployHookContent = getPostDeployHookContent();
-            if (postDeployHookContent != null) {
-                qparams.add(new BasicNameValuePair("postDeployHook", postDeployHookContent));
-            }
-
-            String actionKey = getActionKey();
-            if (actionKey != null) {
-                qparams.add(new BasicNameValuePair("actionkey", actionKey));
-            }
-
-            URI uri = URIUtils.createURI(getShema(), getApiJelastic(), getPort(), getUrlDeploy(), URLEncodedUtils.format(qparams, "UTF-8"), null);
-            getLog().debug(uri.toString());
-            HttpGet httpPost = new HttpGet(uri);
-            addHeaders(httpPost);
-            ResponseHandler<String> responseHandler = new BasicResponseHandler();
-            String responseBody = httpclient.execute(httpPost, responseHandler);
-            getLog().debug(responseBody);
-            deploy = mapper.readValue(responseBody, Deploy.class);
-        } catch (URISyntaxException e) {
-            getLog().error(e.getMessage(), e);
-        } catch (ClientProtocolException e) {
-            getLog().error(e.getMessage(), e);
-        } catch (IOException e) {
-            getLog().error(e.getMessage(), e);
+        String preDeployHookContent = getPreDeployHookContent();
+        if (preDeployHookContent != null) {
+            params.put("preDeployHook", preDeployHookContent);
         }
 
-        return deploy;
+        String postDeployHookContent = getPostDeployHookContent();
+        if (postDeployHookContent != null) {
+            params.put("postDeployHook", postDeployHookContent);
+        }
+
+        Integer delay = getDelay();
+        if (delay != null) {
+            params.put("delay", delay);
+            params.put("isSequential", true);
+        }
+        return control.deployApp(params);
     }
 
     public LogOut logOut(Authentication authentication) {

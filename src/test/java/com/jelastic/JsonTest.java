@@ -2,7 +2,6 @@ package com.jelastic;
 
 import com.jelastic.model.Authentication;
 import com.jelastic.model.CreateObject;
-import com.jelastic.model.Deploy;
 import com.jelastic.model.UpLoader;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Ignore;
@@ -72,25 +71,9 @@ public class JsonTest {
     }
 
     @Test
-    public void deployErrorTest() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        URL url = this.getClass().getClassLoader().getResource("deploy_error.json");
-        Deploy deploy = mapper.readValue(url, Deploy.class);
-        assertEquals(deploy.getError(), "application [8129583aae37a4b556d36dbd56abbc68,8129583aae37a4b556d36dbd56abbc68] not exist");
-    }
-
-    @Test
-    public void deployOkTest() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        URL url = this.getClass().getClassLoader().getResource("deploy_ok.json");
-        Deploy deploy = mapper.readValue(url, Deploy.class);
-        assertEquals(deploy.getResponse().getResult(), 0);
-    }
-
-    @Test
     public void deploy() throws Exception {
         String fff = "miltrex-web-1.0.0.war";
-        System.out.println(fff.substring(0,fff.length()-4));
+        System.out.println(fff.substring(0, fff.length() - 4));
     }
 
 }

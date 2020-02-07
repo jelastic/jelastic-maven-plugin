@@ -4,7 +4,7 @@
 
     <groupId>com.jelastic</groupId>
     <artifactId>jelastic-maven-plugin</artifactId>
-    <version>1.9.3</version>
+    <version>1.9.4</version>
     <packaging>maven-plugin</packaging>
     <name>jelastic-maven-plugin</name>
     <url>https://github.com/jelastic/jelastic-maven-plugin</url>

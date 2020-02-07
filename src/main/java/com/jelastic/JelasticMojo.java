@@ -9,54 +9,6 @@ package com.jelastic;
  * http://api.hivext.com/1.0/storage/uploader/rest/upload
  * http://app.hivext.com/1.0/data/base/rest/createobject
  * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- */
-
-
-/**
- *        http://app.hivext.com/1.0/users/authentication/rest/signin
- *        http://api.hivext.com/1.0/storage/uploader/rest/upload
- *        http://app.hivext.com/1.0/data/base/rest/createobject
- *        http://live.jelastic.com/deploy/DeployArchive
  */
 
 import com.jelastic.model.*;
@@ -283,6 +235,13 @@ public abstract class JelasticMojo extends AbstractMojo {
      */
     private File outputDirectory;
 
+    /**
+     * Deployment parameters.
+     *
+     * @parameter
+     */
+    private Map<String, String> deployParams;
+
     boolean isWar() {
         if (WAR_TYPE.equals(packaging)) {
             return true;
@@ -395,7 +354,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         if (preDeployHookFilePath != null && preDeployHookFilePath.length() > 0) {
             try {
                 preDeployHookContent = readFileContent(preDeployHookFilePath);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 getLog().info("Can't read [preDeployHook] from [" + preDeployHookFilePath + "]:" + ex.getMessage());
             }
         }
@@ -410,7 +369,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         if (postDeployHookFilePath != null && postDeployHookFilePath.length() > 0) {
             try {
                 postDeployHookContent = readFileContent(postDeployHookFilePath);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 getLog().info("Can't read [postDeployHook] from [" + postDeployHookFilePath + "]:" + ex.getMessage());
             }
         }
@@ -423,7 +382,7 @@ public abstract class JelasticMojo extends AbstractMojo {
         BufferedReader buf = new BufferedReader(new InputStreamReader(is));
         String line = buf.readLine();
         StringBuilder sb = new StringBuilder();
-        while(line != null) {
+        while (line != null) {
             sb.append(line).append("\n");
             line = buf.readLine();
         }
@@ -617,7 +576,7 @@ public abstract class JelasticMojo extends AbstractMojo {
 
             File[] files = outputDirectory.listFiles(new FileFilter() {
                 public boolean accept(File pathname) {
-                    return pathname.isFile() && pathname.getName().matches(".*\\.(" + WAR_TYPE + "|" + EAR_TYPE +"|" + JAR_TYPE + ")$");
+                    return pathname.isFile() && pathname.getName().matches(".*\\.(" + WAR_TYPE + "|" + EAR_TYPE + "|" + JAR_TYPE + ")$");
                 }
             });
 
@@ -904,6 +863,12 @@ public abstract class JelasticMojo extends AbstractMojo {
             String actionKey = getActionKey();
             if (actionKey != null) {
                 qparams.add(new BasicNameValuePair("actionkey", actionKey));
+            }
+
+            if (deployParams != null) {
+                for (Map.Entry<String, String> entry : deployParams.entrySet()) {
+                    qparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                }
             }
 
             URI uri = URIUtils.createURI(getShema(), getApiJelastic(), getPort(), getUrlDeploy(), URLEncodedUtils.format(qparams, "UTF-8"), null);

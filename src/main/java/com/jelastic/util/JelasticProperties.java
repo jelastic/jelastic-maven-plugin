@@ -4,7 +4,7 @@ public interface JelasticProperties {
     String JELASTIC_PREDEPLOY_HOOK  = "jelastic-predeploy-hook";
     String JELASTIC_POSTDEPLOY_HOOK = "jelastic-postdeploy-hook";
     String NODE_GROUP               = "nodegroup";
-    String DELAY                    = "deplay";
+    String DELAY                    = "delay";
     String ENVIRONMENT              = "environment";
     String CONTEXT                  = "context";
     String JELASTIC_PASSWORD        = "jelastic-password";

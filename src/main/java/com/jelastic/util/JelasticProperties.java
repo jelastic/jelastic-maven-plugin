@@ -10,7 +10,7 @@ public interface JelasticProperties {
     String JELASTIC_PASSWORD        = "jelastic-password";
     String JELASTIC_HOSTER          = "jelastic-hoster";
 
-    String UPLOAD_URL = "http://%s/1.0/storage/uploader/rest/upload";
+    String UPLOAD_URL = "https://%s/1.0/storage/uploader/rest/upload";
 
     String FID_VALUE     = "123456";
     String FID_PARAM     = "fid";

@@ -229,7 +229,7 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
                                                       .addPart(FID_PARAM, new StringBody(FID_VALUE, ContentType.TEXT_PLAIN))
                                                       .addPart(SESSION_PARAM, new StringBody(getPassword(), ContentType.TEXT_PLAIN))
                                                       .addPart(FILE_PARAM, new FileBody(artifactFile)).build();
-        WellRestedResponse wellRestedResponse = WellRestedRequest.builder().url(String.format(UPLOAD_URL, getApiJelastic())).build().post().httpEntity(httpEntity).submit();
+        WellRestedResponse wellRestedResponse = WellRestedRequest.builder().timeout(30*1000).url(String.format(UPLOAD_URL, getApiJelastic())).build().post().httpEntity(httpEntity).submit();
         if (wellRestedResponse.isValid()) {
             return wellRestedResponse.fromJson()
                                      .castTo(new TypeToken<UploadResponse>() {
@@ -240,7 +240,7 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
 
     public NodeSSHResponses deploy(String fileName, String fileUrl) {
         String url = getApiJelastic();
-        Control control = new Control(null, getPassword(), "http://" + url + "/1.0/" + Control.SERVICE_PATH);
+        Control control = new Control(null, getPassword(), "https://" + url + "/1.0/" + Control.SERVICE_PATH);
         Map<Object, Object> params = new HashMap<>();
         params.put("envName", getEnvironment());
         params.put("fileUrl", fileUrl);

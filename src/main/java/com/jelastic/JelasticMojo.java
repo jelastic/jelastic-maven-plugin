@@ -867,6 +867,9 @@ public abstract class JelasticMojo extends AbstractMojo {
 
             if (deployParams != null) {
                 for (Map.Entry<String, String> entry : deployParams.entrySet()) {
+                    if (entry.getValue() == null || entry.getValue().trim().length() == 0) {
+                        continue;
+                    }
                     qparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
                 }
             }

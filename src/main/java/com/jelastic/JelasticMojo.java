@@ -9,59 +9,6 @@ package com.jelastic;
  * http://api.hivext.com/1.0/storage/uploader/rest/upload
  * http://app.hivext.com/1.0/data/base/rest/createobject
  * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- * <p>
- * http://app.hivext.com/1.0/users/authentication/rest/signin
- * http://api.hivext.com/1.0/storage/uploader/rest/upload
- * http://app.hivext.com/1.0/data/base/rest/createobject
- * http://live.jelastic.com/deploy/DeployArchive
- */
-
-
-/**
- *        http://app.hivext.com/1.0/users/authentication/rest/signin
- *        http://api.hivext.com/1.0/storage/uploader/rest/upload
- *        http://app.hivext.com/1.0/data/base/rest/createobject
- *        http://live.jelastic.com/deploy/DeployArchive
  */
 
 import com.jelastic.model.*;
@@ -284,6 +231,13 @@ public abstract class JelasticMojo extends AbstractMojo {
      * @required
      */
     private File outputDirectory;
+
+    /**
+     * Deployment parameters.
+     *
+     * @parameter
+     */
+    private Map<String, String> deployParams;
 
     public static DefaultHttpClient wrapClient(DefaultHttpClient base) {
         try {
@@ -944,6 +898,15 @@ public abstract class JelasticMojo extends AbstractMojo {
             String actionKey = getActionKey();
             if (actionKey != null) {
                 qparams.add(new BasicNameValuePair("actionkey", actionKey));
+            }
+
+            if (deployParams != null) {
+                for (Map.Entry<String, String> entry : deployParams.entrySet()) {
+                    if (entry.getValue() == null || entry.getValue().trim().length() == 0) {
+                        continue;
+                    }
+                    qparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                }
             }
 
             URI uri = URIUtils.createURI(getShema(), getApiJelastic(), getPort(), getUrlDeploy(), URLEncodedUtils.format(qparams, "UTF-8"), null);

@@ -20,23 +20,21 @@ public class DeployMojo extends AbstractJelasticMojo {
         getLog().info("File Upload: Starting");
         UploadResponse uploadResponse = upload();
         if (uploadResponse.getResult() == 0) {
-            if (uploadResponse.getResult() == 0) {
-                getLog().info("File Upload : SUCCESS");
-                getLog().info("File URL : " + uploadResponse.getFile());
-                getLog().info("File size : " + uploadResponse.getSize());
-                getLog().info("------------------------------------------------------------------------");
+            getLog().info("File Upload : SUCCESS");
+            getLog().info("File URL : " + uploadResponse.getFile());
+            getLog().info("File size : " + uploadResponse.getSize());
+            getLog().info("------------------------------------------------------------------------");
 
-                if (isUploadOnly()) {
-                    return;
-                }
-                NodeSSHResponses deploy = deploy(uploadResponse.getName(), uploadResponse.getFile());
-                if (deploy.getResult() == 0) {
-                    getLog().info("Deploy file : SUCCESS");
-                    getLog().info(deploy.getRaw());
-                } else {
-                    getLog().error("Deploy : FAILED");
-                    getLog().error("Error : " + deploy.getError());
-                }
+            if (isUploadOnly()) {
+                return;
+            }
+            NodeSSHResponses deploy = deploy(uploadResponse.getName(), uploadResponse.getFile());
+            if (deploy.getResult() == 0) {
+                getLog().info("Deploy file : SUCCESS");
+                getLog().info(deploy.getRaw());
+            } else {
+                getLog().error("Deploy : FAILED");
+                getLog().error("Error : " + deploy.getError());
             }
         } else {
             getLog().error("File upload : FAILED");

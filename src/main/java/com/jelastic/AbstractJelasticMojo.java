@@ -2,6 +2,7 @@ package com.jelastic;
 
 import com.google.gson.reflect.TypeToken;
 import com.jelastic.api.environment.Control;
+import com.jelastic.api.environment.response.NodeSSHResponse;
 import com.jelastic.api.environment.response.NodeSSHResponses;
 import com.jelastic.util.JelasticProperties;
 import com.jelastic.util.UploadResponse;
@@ -264,5 +265,18 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
             params.put("isSequential", true);
         }
         return control.deployApp(params);
+    }
+
+    public NodeSSHResponse restartNode(int nodeId) {
+        String url = getApiJelastic();
+
+        Control control = new Control(null, getPassword(), "https://" + url + "/1.0/" + Control.SERVICE_PATH);
+
+        Map<Object, Object> params = new HashMap<>();
+        params.put("envName", getEnvironment());
+        params.put("session", getPassword());
+        params.put("nodeId", nodeId);
+
+        return control.restartNodeById(params);
     }
 }

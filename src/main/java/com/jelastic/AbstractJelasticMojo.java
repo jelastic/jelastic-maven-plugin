@@ -3,6 +3,11 @@ package com.jelastic;
 import com.google.gson.reflect.TypeToken;
 import com.jelastic.api.environment.Control;
 import com.jelastic.api.environment.response.NodeSSHResponses;
+import com.jelastic.exception.JelasticApiException;
+import com.jelastic.model.GetDomainsResponse;
+import com.jelastic.model.GetNodeGroupResponse;
+import com.jelastic.model.NodeGroup;
+import com.jelastic.model.NodeGroupName;
 import com.jelastic.util.JelasticProperties;
 import com.jelastic.util.UploadResponse;
 import com.lindar.wellrested.WellRestedRequest;
@@ -23,13 +28,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static com.jelastic.util.JelasticProperties.FID_PARAM;
 import static com.jelastic.util.JelasticProperties.FID_VALUE;
 import static com.jelastic.util.JelasticProperties.FILE_PARAM;
+import static com.jelastic.util.JelasticProperties.GET_DOMAINS_PATH;
+import static com.jelastic.util.JelasticProperties.GET_NODEGROUP_PATH;
 import static com.jelastic.util.JelasticProperties.SESSION_PARAM;
 import static com.jelastic.util.JelasticProperties.UPLOAD_URL;
 
@@ -92,6 +102,13 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
     private String nodeGroup;
 
     /**
+     * Node group display name (i.e. what is displayed in the Jelastic UI) Properties.
+     *
+     * @parameter
+     */
+    private String nodeGroupDisplayName;
+
+    /**
      * Delay of sequential deploy
      *
      * @parameter
@@ -135,6 +152,22 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
 
     private String getNodeGroup() {
         return getProperty(JelasticProperties.NODE_GROUP, nodeGroup);
+    }
+
+    private String getNodeGroupDisplayName() {
+        String displayNameFromProperties = getProperty(JelasticProperties.NODE_GROUP_DISPLAY_NAME, nodeGroupDisplayName);
+        if (StringUtils.isBlank(displayNameFromProperties)) {
+            return displayNameFromProperties;
+        }
+
+        List<NodeGroup> nodeGroups = this.listNodeGroups();
+        for (NodeGroup ng : nodeGroups) {
+            // find the node group with the given display name and returns its name
+            if (ng.getDisplayName().equals(displayNameFromProperties)) {
+                return ng.getName();
+            }
+        }
+        throw new IllegalArgumentException(String.format("[%s] is not a valid node group name", displayNameFromProperties));
     }
 
     public Integer getDelay() {
@@ -229,7 +262,7 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
                                                       .addPart(FID_PARAM, new StringBody(FID_VALUE, ContentType.TEXT_PLAIN))
                                                       .addPart(SESSION_PARAM, new StringBody(getPassword(), ContentType.TEXT_PLAIN))
                                                       .addPart(FILE_PARAM, new FileBody(artifactFile)).build();
-        WellRestedResponse wellRestedResponse = WellRestedRequest.builder().timeout(30*1000).url(String.format(UPLOAD_URL, getApiJelastic())).build().post().httpEntity(httpEntity).submit();
+        WellRestedResponse wellRestedResponse = WellRestedRequest.builder().timeout(30 * 1000).url(String.format(UPLOAD_URL, getApiJelastic())).build().post().httpEntity(httpEntity).submit();
         if (wellRestedResponse.isValid()) {
             return wellRestedResponse.fromJson()
                                      .castTo(new TypeToken<UploadResponse>() {
@@ -246,7 +279,12 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
         params.put("fileUrl", fileUrl);
         params.put("fileName", fileName);
         params.put("context", getContext());
-        params.put("nodeGroup", getNodeGroup());
+
+        String deployNodeGroup = getNodeGroup();
+        if (StringUtils.isBlank(deployNodeGroup)) {
+            deployNodeGroup = getNodeGroupDisplayName();
+        }
+        params.put("nodeGroup", deployNodeGroup);
 
         String preDeployHookContent = getPreDeployHookContent();
         if (preDeployHookContent != null) {
@@ -264,5 +302,60 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
             params.put("isSequential", true);
         }
         return control.deployApp(params);
+    }
+
+    private List<String> getNodeGroups() {
+        final String url = String.format("https://%s%s?envName=%s&session=%s",
+                                         getApiJelastic(),
+                                         GET_DOMAINS_PATH,
+                                         getEnvironment(),
+                                         getPassword());
+
+        final WellRestedResponse response = WellRestedRequest.builder()
+                                                             .timeout(30 * 1000)
+                                                             .url(url)
+                                                             .build()
+                                                             .get()
+                                                             .submit();
+
+        if (!response.isValid()) {
+            throw new JelasticApiException(String.format("Could not get node groups from environment: %s", response.getServerResponse()));
+        }
+
+        final GetDomainsResponse getDomainsResponse = response.fromJson().castTo(GetDomainsResponse.class);
+        return getDomainsResponse.getNodeGroups().stream().map(NodeGroupName::getNodeGroup).collect(Collectors.toList());
+    }
+
+    private NodeGroup getNodeGroup(String nodeGroupName) {
+        final String url = String.format("https://%s%s?envName=%s&session=%s&nodeGroup=%s",
+                                         getApiJelastic(),
+                                         GET_NODEGROUP_PATH,
+                                         getEnvironment(),
+                                         getPassword(),
+                                         nodeGroupName);
+
+        final WellRestedResponse response = WellRestedRequest.builder()
+                                                             .timeout(30 * 1000)
+                                                             .url(url)
+                                                             .build()
+                                                             .get()
+                                                             .submit();
+
+        if (!response.isValid()) {
+            throw new JelasticApiException(String.format("Could not get node groups by name: %s", response.getServerResponse()));
+        }
+
+        final GetNodeGroupResponse getNodeGroupResponse = response.fromJson().castTo(GetNodeGroupResponse.class);
+        return getNodeGroupResponse.getNodeGroup();
+    }
+
+    private List<NodeGroup> listNodeGroups() {
+        try {
+            List<String> nodeGroupNames = this.getNodeGroups();
+            return nodeGroupNames.stream().map(this::getNodeGroup).collect(Collectors.toList());
+        } catch (final Exception ex) {
+            getLog().error("Could not list node groups", ex);
+        }
+        return new ArrayList<>(0);
     }
 }

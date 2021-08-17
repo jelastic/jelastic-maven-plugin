@@ -262,7 +262,7 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
                                                       .addPart(FID_PARAM, new StringBody(FID_VALUE, ContentType.TEXT_PLAIN))
                                                       .addPart(SESSION_PARAM, new StringBody(getPassword(), ContentType.TEXT_PLAIN))
                                                       .addPart(FILE_PARAM, new FileBody(artifactFile)).build();
-        WellRestedResponse wellRestedResponse = WellRestedRequest.builder().timeout(30 * 1000).url(String.format(UPLOAD_URL, getApiJelastic())).build().post().httpEntity(httpEntity).submit();
+        WellRestedResponse wellRestedResponse = WellRestedRequest.builder().timeout(120 * 1000).url(String.format(UPLOAD_URL, getApiJelastic())).build().post().httpEntity(httpEntity).submit();
         if (wellRestedResponse.isValid()) {
             return wellRestedResponse.fromJson()
                                      .castTo(new TypeToken<UploadResponse>() {

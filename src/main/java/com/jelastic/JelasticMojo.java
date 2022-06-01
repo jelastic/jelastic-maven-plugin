@@ -84,7 +84,7 @@ public abstract class JelasticMojo extends AbstractMojo {
     private final static String URL_GET_ARCHIVES = "/GetArchives";
     private final static String URL_DELETE_ARCHIVE = "/DeleteArchive";
     private final static int SAME_FILES_LIMIT = 5;
-    private final static String COMMENT_PREFIX = "Uploaded by Jelastic Maven plugin";
+    private final static String COMMENT_PREFIX = "Uploaded by Maven plugin";
     private static ObjectMapper mapper = new ObjectMapper();
     private static Properties properties = new Properties();
 

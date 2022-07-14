@@ -2,6 +2,7 @@ package com.jelastic;
 
 import com.google.gson.reflect.TypeToken;
 import com.jelastic.api.environment.Control;
+import com.jelastic.api.environment.Deployment;
 import com.jelastic.api.environment.response.NodeSSHResponses;
 import com.jelastic.exception.JelasticApiException;
 import com.jelastic.model.GetDomainsResponse;
@@ -273,7 +274,7 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
 
     public NodeSSHResponses deploy(String fileName, String fileUrl) {
         String url = getApiJelastic();
-        Control control = new Control(null, getPassword(), "https://" + url + "/1.0/" + Control.SERVICE_PATH);
+        Deployment deployment = new Deployment(null, getPassword(), "https://" + url + "/1.0/" + Deployment.SERVICE_PATH);
         Map<Object, Object> params = new HashMap<>();
         params.put("envName", getEnvironment());
         params.put("fileUrl", fileUrl);
@@ -286,22 +287,26 @@ public abstract class AbstractJelasticMojo extends AbstractMojo {
         }
         params.put("nodeGroup", deployNodeGroup);
 
+        Map<String, Object> hooks = new HashMap<>();
         String preDeployHookContent = getPreDeployHookContent();
         if (preDeployHookContent != null) {
-            params.put("preDeployHook", preDeployHookContent);
+            hooks.put("preDeployHook", preDeployHookContent);
         }
 
         String postDeployHookContent = getPostDeployHookContent();
         if (postDeployHookContent != null) {
-            params.put("postDeployHook", postDeployHookContent);
+            hooks.put("postDeployHook", postDeployHookContent);
+        }
+
+        if (!hooks.isEmpty()) {
+            params.put("hooks", hooks);
         }
 
         Integer delay = getDelay();
         if (delay != null) {
             params.put("delay", delay);
-            params.put("isSequential", true);
         }
-        return control.deployApp(params);
+        return deployment.deployArchive(params);
     }
 
     private List<String> getNodeGroups() {
